@@ -570,6 +570,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
         setValue(memoryMapIdx, depth(memoryMapIdx));
 
+        //更新父节点信息
         updateParentsFree(memoryMapIdx);
 
         if (nioBuffer != null && cachedNioBuffers != null &&

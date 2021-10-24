@@ -173,6 +173,7 @@ final class PoolSubpage<T> implements PoolSubpageMetric {
         int q = bitmapIdx >>> 6;
         int r = bitmapIdx & 63;
         assert (bitmap[q] >>> r & 1) != 0;
+        // 恢复0 的操作
         bitmap[q] ^= 1L << r;
 
         setNextAvail(bitmapIdx);
