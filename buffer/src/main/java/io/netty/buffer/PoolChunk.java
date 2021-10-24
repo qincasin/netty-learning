@@ -167,6 +167,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
         // 0b 1 0000 0000 0000 0000 0000 0000
         // 24
+        //  计算有多少个0
         log2ChunkSize = log2(chunkSize);
 
         // 8k - 1
@@ -389,9 +390,9 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
         // 条件一：val < d， val 表示二叉树中某个节点的 可分配深度能力值， 条件成立 说明 当前节点管理的内存 比较大，总之大于 申请容量的，需要到当前节点的下一级
         // 尝试申请。
-        //         0b 1111 1111 1111 1111 1111 1000 0000 0000
+      //  -2048    0b 1111 1111 1111 1111 1111 1000 0000 0000
         // 2048 => 0b 0000 0000 0000 0000 0000 1000 0000 0000
-
+        //  ==> 得出结果是 非 0
 
         //         0b 1111 1111 1111 1111 1111 1000 0000 0000
         // 1024 => 0b 0000 0000 0000 0000 0000 0100 0000 0000
@@ -412,7 +413,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
                 //  0b 1000 0000 0000
                 //  0b 0000 0000 0001
                 //  0b 1000 0000 0001 => 2049
-                id ^= 1;
+                id ^= 1;  //^ 亦或算法  不同为1  相同 为0
                 // 获取兄弟节点的 可分配深度能力值。
                 val = value(id);
             }
@@ -593,7 +594,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
             byte val = value(memoryMapIdx);
             assert val == unusable : String.valueOf(val);
 
-            // 参数1：this ，创建byteBuf 分配内存的 chunk 对象，真实的内存 是有chunk 持有的，所以 必须传 chunk对象
+            // 参数1：this ，创建byteBuf 分配内存的 chunk 对象，真实的内存 是由chunk 持有的，所以 必须传 chunk对象
             // 参数2：nioBuffer 可能是null..
             // 参数3：handle  buf 占用的内存 位置相关信息 都与 handle 值有关系，后面 释放内存时 还要使用 handle 的值。
             // 参数4：runOffset(memoryMapIdx) + offset   计算出 当前buf 占用的内存 在 byteBuffer 上的偏移位置，必须知道buf管理的内存 在 大内存上的偏移位置 ，
@@ -657,11 +658,11 @@ final class PoolChunk<T> implements PoolChunkMetric {
         // 参数4：runOffset(memoryMapIdx) + (bitmapIdx & 0x3FFFFFFF) * subpage.elemSize + offset   详解。
         // runOffset(memoryMapIdx) =》  计算出来 subpage 占用的内存 在 byteBuffer上的偏移位置。
         // (bitmapIdx & 0x3FFFFFFF) =》0x3FFFFFFF => 0b 0011 1111 1111 1111 1111 1111 1111 1111
-        // 例如： bitmapIdx is 68 =》 0b 0100 0000 0000 0000 0000 0000 0100 0100
+        // 例如： bitmapIdx is 68 =》 0b 0100 0000 0000 0000 0000 0000 0100 0100  68 是后面的前面进行了高位第二位 补1
         // 0b 0100 0000 0000 0000 0000 0000 0100 0100
         // 0b 0011 1111 1111 1111 1111 1111 1111 1111
         // 0b 0000 0000 0000 0000 0000 0000 0100 0100
-        // 也就是说 (bitmapIdx & 0x3FFFFFFF)  在做解码操作，解析出来 真正的 bitmapIdx 值。
+        // 也就是说 (bitmapIdx & 0x3FFFFFFF)  在做解码操作，解析出来 真正的 bitmapIdx 值。！！！！！
 
         // bitmapIdx * subpage.elemSize   就计算出来 当前 bitmapIdx 占用的内存 在 subpage 上的偏移位置。
 
@@ -689,7 +690,7 @@ final class PoolChunk<T> implements PoolChunkMetric {
 
     private int runLength(int id) {
         // represents the size in #bytes supported by node 'id' in the tree
-
+        // log2ChunkSize = 24
         // 24 - depth(2049) => 24 - 11 => 13
         // 1 << 13 => 8192
         return 1 << log2ChunkSize - depth(id);
